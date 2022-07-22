@@ -9,7 +9,7 @@ services:
     ports:
       - "127.0.0.1:8080:80"
     volumes:
-      - ../geckodriver-server/html:/var/www/html
+      - ./my-app:/var/www/html
     deploy:
       resources:
         limits:
