@@ -24,3 +24,12 @@ $pool = new SeleniumPool(
         file_put_contents( 'php://stdout', $row."\n" );
     }
 );
+
+$pool->setAcquireDeadTime(
+    intval(getenv("GECKOPOOL_ACQUIRE_DEADTIME") ?: 60)
+);
+
+$pool->setMaxFailures(
+    intval(getenv("GECKOPOOL_MAX_FAILURES") ?: 1)
+);
+

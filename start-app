@@ -4,6 +4,17 @@ export PATH=$PATH:/opt/firefox
 
 php -f /var/www/cli/launch.php
 
+cat << EOCRON > /etc/crontab
+SHELL=/bin/bash
+PATH=$PATH
+GECKOPOOL_N_INSTANCES=$GECKOPOOL_N_INSTANCES
+GECKOPOOL_ACQUIRE_DEADTIME=$GECKOPOOL_ACQUIRE_DEADTIME
+GECKOPOOL_MAX_FAILURES=$GECKOPOOL_MAX_FAILURES
+
+* * * * * root php -f /var/www/cli/autotest.php > /proc/1/fd/1
+
+EOCRON
+
 cron &
 
 /usr/sbin/apachectl -DFOREGROUND

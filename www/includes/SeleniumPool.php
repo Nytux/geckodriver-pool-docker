@@ -210,6 +210,10 @@ class SeleniumPool {
         throw new TimeoutException('Acquire timeout');
     }
 
+    public function getInstanceByIndex($index) {
+        return new SeleniumInstance( $this, $index );
+    }
+
     private function syncAcquire() {
         $idx0 = rand(0,$this->nInstances-1);
         for ( $i = 0 ; $i < $this->nInstances ; $i++ ) {

@@ -1,11 +1,13 @@
 version: "3"
 services:
   geckodriver-pool:
-    image: nytux/geckodriver-pool
+    image: nytux/geckodriver-pool:latest
     build: .
     container_name: geckodriver-pool
     environment:
       - GECKOPOOL_N_INSTANCES=3
+      - GECKOPOOL_ACQUIRE_DEADTIME=60
+      - GECKOPOOL_MAX_FAILURES=1
     ports:
       - "127.0.0.1:8080:80"
     volumes:
