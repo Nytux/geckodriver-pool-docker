@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+export PATH=$PATH:/opt/firefox
+
+php -f /var/www/cli/launch.php
+
+cron &
+
+/usr/sbin/apachectl -DFOREGROUND

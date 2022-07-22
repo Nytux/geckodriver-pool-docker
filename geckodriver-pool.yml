@@ -1,0 +1,17 @@
+version: "3"
+services:
+  geckodriver-pool:
+    image: nytux/geckodriver-pool
+    build: .
+    container_name: geckodriver-pool
+    environment:
+      - GECKOPOOL_N_INSTANCES=3
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ../geckodriver-server/html:/var/www/html
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
