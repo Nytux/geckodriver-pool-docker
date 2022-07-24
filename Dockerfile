@@ -8,8 +8,6 @@ RUN apt-get update \
             libapache2-mod-php7.4 apache2 cron php-curl php-zip \
  && rm -rf /var/lib/apt/lists/* \
            /tmp/* \
-# && echo 'export PATH="$PATH:/opt/firefox"' > /etc/profile.d/add_firefox_path.sh \
-# && echo 'export PATH="$PATH:/opt/firefox"' >> /root/.bashrc \
  && chown -R www-data: /var/www/sessions
  
 ENTRYPOINT ["start-app"]

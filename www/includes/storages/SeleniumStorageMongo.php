@@ -1,5 +1,6 @@
 <?php
 
+
 require_once( __DIR__ . '/../SeleniumStorageInterface.php');
 
 class SeleniumStorageMongo implements SeleniumStorageInterface {

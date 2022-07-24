@@ -1,5 +1,6 @@
 <?php
 
+
 /** Abstracts storage of the pool of selenium instances
  */
 

@@ -1,5 +1,6 @@
 <?php
 
+
 require_once( __DIR__.'/SeleniumInstance.php' );
 
 use Facebook\WebDriver\WebDriverBy;
