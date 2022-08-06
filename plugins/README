@@ -1,0 +1,6 @@
+In this directory, put .xpi firefox plugins you want to be automatically loaded when launching firefox instances.
+If you do so, make sure geckodriver-pool.yml contains the line:
+
+      - ./plugins:/var/www/plugins
+
+in section volumes.
