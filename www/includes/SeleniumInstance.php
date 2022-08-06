@@ -235,22 +235,24 @@ class SeleniumInstance {
             }
         }
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "{$this->getUrl()}/session/{$this->sessId}/moz/addon/install" );
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $payload = json_encode( [
-            'path'=>
-//            '/var/plugins/i_dont_care_about_cookies-3.4.1.xpi',
-            __DIR__.'/../plugins/i_dont_care_about_cookies-3.4.1.xpi',
-            'temporary'=>false] );
-        curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
-        curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        $this->log("Sent plugin request to session {$this->sessId} : Got $httpCode ($result)");
+        foreach (glob(__DIR__.'/../plugins/*.xpi') as $filename) {
 
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "{$this->getUrl()}/session/{$this->sessId}/moz/addon/install" );
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $payload = json_encode( [
+                'path'=>$filename,
+    //            '/var/plugins/i_dont_care_about_cookies-3.4.1.xpi',
+    //            __DIR__.'/../plugins/i_dont_care_about_cookies-3.4.1.xpi',
+                'temporary'=>false] );
+            curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
+            curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+            $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            $this->log("Sent plugin request to session {$this->sessId} : Got $httpCode ($result)");
+        }
 /*        if ( $this->pool->hasCookieFile() ) {
             $cookies = $this->pool->getCookies();
             $options = $driver->manage();

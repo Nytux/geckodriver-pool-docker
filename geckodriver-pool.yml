@@ -12,6 +12,7 @@ services:
       - "127.0.0.1:8080:80"
     volumes:
       - ./my-app:/var/www/html
+      - ./plugins:/var/www/plugins
     deploy:
       resources:
         limits:

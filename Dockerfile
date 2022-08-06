@@ -8,6 +8,7 @@ RUN apt-get update \
             libapache2-mod-php7.4 apache2 cron php-curl php-zip \
  && rm -rf /var/lib/apt/lists/* \
            /tmp/* \
- && chown -R www-data: /var/www/sessions
+ && chown -R www-data: /var/www \
+ && usermod --shell /bin/bash www-data
  
 ENTRYPOINT ["start-app"]
