@@ -185,7 +185,7 @@ class SeleniumPool {
     }
 
     public function initialize() {
-        $this->semAcquire(60);
+        $this->semAcquire(time()+60);
 
         shell_exec('pkill -9 geckodriver ; pkill -9 firefox');
         foreach ( $this->ports as $idx => $port ) {
@@ -310,7 +310,7 @@ class SeleniumPool {
 
     public function autoTests() {
 
-        if ( !$this->semAcquire(10) ) {
+        if ( !$this->semAcquire(time()+10) ) {
             $this->log("Aborting autotests : semaphore is set");
             return;
         }
@@ -328,8 +328,13 @@ class SeleniumPool {
                     (( $this->maxFailures > 0 )&&( $nFailures > $this->maxFailures ))) {
                     $this->log( "Restarting instance" );
                     $instance->acquire();
+                    $this->semRelease();
                     $instance->launch();
                     $instance->start();
+                    if ( !$this->semAcquire(time()+10) ) {
+                        $this->log("Aborting autotests : semaphore is set");
+                        return;
+                    }
                 }
             } catch ( Exception $e ) {
                 $this->log("Exception : ".$e->getMessage());
