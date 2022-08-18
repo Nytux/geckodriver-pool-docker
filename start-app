@@ -12,7 +12,6 @@ GECKOPOOL_ACQUIRE_DEADTIME=$GECKOPOOL_ACQUIRE_DEADTIME
 GECKOPOOL_MAX_FAILURES=$GECKOPOOL_MAX_FAILURES
 
 * * * * * root runuser -u www-data -- php -f /var/www/cli/autotest.php > /proc/1/fd/1
-10 2 * * * root runuser -u www-data -- php -f /var/www/cli/launch.php > /proc/1/fd/1
 
 EOCRON
 

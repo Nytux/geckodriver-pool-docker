@@ -169,7 +169,7 @@ class SeleniumInstance {
 /*            echo "Killing ".$this->pid."\n";
             posix_kill( $this->pid, 9 );
 */
-            $this->pool->kill( $this->pid );
+            $this->pool->kill( $this->pid, $this->port );
 
             $this->pid = false;
             $this->sessId = false;

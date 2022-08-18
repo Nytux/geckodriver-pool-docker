@@ -164,8 +164,7 @@ class SeleniumPool {
     /** Launches process for port $port and returns pid
      */
     public function launch( $port ) {
-        $command = ( $this->executable == 'chromedriver' ) ?
-            ''.$this->executable.' --port='.$port.' > /dev/null & echo $!;' :
+        $command = 
             ''.$this->executable.' -p '.$port.' > /dev/null & echo $!;';
         $this->log( "$ $command" );
         $rt = exec($command, $output);
@@ -173,13 +172,16 @@ class SeleniumPool {
         return (int)$rt;
     }
 
-    public function kill( $pid ) {
-//        $cmd = 'PID=`pgrep -f "'.$this->executable.' -p '.$port.'"` && pkill -9 -P $PID && kill -9 $PID';
-        if ( $pid ) {
+    public function kill( $pid, $port ) {
+        $cmd = 'PID=`pgrep -f "'.$this->executable.' -p '.$port.'"` && pkill -9 -P $PID && kill -9 $PID';
+        $this->log( "$ $cmd" );
+        $this->log( "> ".shell_exec($cmd) );
+
+/*        if ( $pid ) {
             $cmd = "pkill -9 -P $pid ; kill -9 $pid";
             $this->log( "$ $cmd" );
             $this->log( "> ".shell_exec($cmd) );
-        }
+        }*/
 //        echo "Executing ".'pkill -9 -f "'.$this->executable.' -p '.$port.'"';
 //        shell_exec('pkill -9 -f "'.$this->executable.' -p '.$port.'"');
     }
@@ -340,5 +342,6 @@ class SeleniumPool {
                 $this->log("Exception : ".$e->getMessage());
             }
         }
+        $this->semRelease();
     }
 }
