@@ -17,15 +17,18 @@ class SeleniumPool {
     private $storage;
     private $releasingAll = false;
     private $headless = true;
-    private $acquireDeadTime = 60;
-    private $maxFailures = 1;
     private $cookieFile = false;
     private $acquiredPort = 0;
-    
+
+    public $acquireDeadTime = 60;
+    public $maxFailures = 1;
+
     private $acquiredInstances = [];
     private $logger;
     private $semHandle = null; // semaphore
     private $semAcquired = false;
+    private $semMasterHandle = null; // semaphore for health check/kill/restart operations
+    private $semMasterAcquired = false;
 
     public function __construct( $storage, $ports, $logger=false ) {
         $this->storage = $storage;
@@ -38,9 +41,26 @@ class SeleniumPool {
         $this->logger = $logger;
     }
 
+    private function semMasterAcquire() {
+        if ( $this->semMasterAcquired ) return true;
+        $this->log("semMasterAcquire");
+        if ( !$this->semMasterHandle ) {
+            $sem_key = ftok( __FILE__, "b" );
+            $this->semMasterHandle = sem_get( $sem_key );    
+        }
+        return $this->semMasterAcquired = sem_acquire( $this->semMasterHandle, true );
+    }
+
+    private function semMasterRelease() {
+        $this->log("semMasterRelease");
+        if ( $this->semMasterAcquired ) sem_release( $this->semMasterHandle );
+        $this->semMasterAcquired = false;
+    }
+
     private function semAcquire( $retryUntil ) {
 
         if ( $this->semAcquired ) return true;
+        $this->log("semAcquire until $retryUntil");
         if ( !$this->semHandle ) {
             $sem_key = ftok( __FILE__, "a" );
             $this->semHandle = sem_get( $sem_key );    
@@ -53,11 +73,13 @@ class SeleniumPool {
         )) {
             usleep(200000);
         }
+        $this->log("semAcquired");
 
         return $this->semAcquired;
     }
 
     private function semRelease() {
+        $this->log("semRelease");
         if ( $this->semAcquired ) sem_release( $this->semHandle );
         $this->semAcquired = false;
     }
@@ -173,9 +195,9 @@ class SeleniumPool {
     }
 
     public function kill( $pid, $port ) {
-        $cmd = 'PID=`pgrep -f "'.$this->executable.' -p '.$port.'"` && pkill -9 -P $PID && kill -9 $PID';
+        $cmd = __DIR__.'/kill.sh '.$port; //'PID=`pgrep -f "'.$this->executable.' -p '.$port.'"` ; pkill -9 -P $PID ; kill -9 $PID';
         $this->log( "$ $cmd" );
-        $this->log( "> ".shell_exec($cmd) );
+        $this->log( "> ".exec($cmd) );
 
 /*        if ( $pid ) {
             $cmd = "pkill -9 -P $pid ; kill -9 $pid";
@@ -187,9 +209,12 @@ class SeleniumPool {
     }
 
     public function initialize() {
-        $this->semAcquire(time()+60);
+        if ( !$this->semMasterAcquire() ) {
+            $this->log("Initialize: could not acquire master semaphore");
+            return;
+        }
 
-        shell_exec('pkill -9 geckodriver ; pkill -9 firefox');
+        exec('pkill -9 geckodriver ; pkill -9 firefox');
         foreach ( $this->ports as $idx => $port ) {
             $instance = new SeleniumInstance( $this, $idx );
             $instance->setPort( $port );
@@ -197,7 +222,7 @@ class SeleniumPool {
             $instance->start();
         }
 
-        $this->semRelease();
+        $this->semMasterRelease();
     }
 
     public function initializeSessions() {
@@ -222,7 +247,7 @@ class SeleniumPool {
             $idx = ( $idx0+$i )%$this->nInstances;
             $instance = new SeleniumInstance( $this, $idx );
             $this->acquiredPort = $instance->getPort();
-            if ( ! $instance->taken() ) {
+            if ( !( $instance->taken()||$instance->toBeKilled() ) ) {
                 if ( !$instance->testSessionAlive() ) {
                     $instance->incFailureCount();
                 } else {
@@ -312,22 +337,20 @@ class SeleniumPool {
 
     public function autoTests() {
 
+        if ( !$this->semMasterAcquire() ) {
+            $this->log("Aborting autotests : master semaphore is set");
+            return;
+        }
         if ( !$this->semAcquire(time()+10) ) {
-            $this->log("Aborting autotests : semaphore is set");
+            $this->log("Aborting autotests : semaphore has been kept for 10 seconds");
             return;
         }
         for ( $idx = 0 ; $idx < $this->nInstances ; $idx++ ) {
             try {
                 $instance = new SeleniumInstance( $this, $idx );
                 $this->acquiredPort = $instance->getPort();
-                $howLong = $instance->howLongAcquired();
-                $nFailures = $instance->getFailures();
-                $this->log( "Instance ".
-                    ($howLong ? " acquired for $howLong seconds" : " is free").
-                    " and has failed ".$nFailures." consecutive times" );
-                if ((( $this->acquireDeadTime > 0 )&&( $howLong > $this->acquireDeadTime ))
-                    ||
-                    (( $this->maxFailures > 0 )&&( $nFailures > $this->maxFailures ))) {
+
+                if ( $instance->toBeKilled(true) ) {
                     $this->log( "Restarting instance" );
                     $instance->acquire();
                     $this->semRelease();
@@ -343,5 +366,6 @@ class SeleniumPool {
             }
         }
         $this->semRelease();
+        $this->semMasterRelease();
     }
 }

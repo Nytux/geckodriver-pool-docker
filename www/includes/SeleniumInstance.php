@@ -29,6 +29,17 @@ class SeleniumInstance {
         $this->load();
     }
 
+    public function toBeKilled($useLog=false) {
+        $howLong = $this->howLongAcquired();
+        $nFailures = $this->getFailures();
+        if ( $useLog ) $this->log( "Instance ".
+            ($howLong ? " acquired for $howLong seconds" : " is free").
+            " and has failed ".$nFailures." consecutive times" );
+        return ((( $this->pool->acquireDeadTime > 0 )&&( $howLong > $this->pool->acquireDeadTime ))
+            ||
+            (( $this->pool->maxFailures > 0 )&&( $nFailures > $this->pool->maxFailures )));
+    }
+
     public function log( $row ) { $this->pool->log($row); }
 
     public function getSessId() {
@@ -90,11 +101,14 @@ class SeleniumInstance {
     }
 
     public function release($normal=true) {
-
-        $this->acquired = 0;
-        if ( $normal ) $this->failures = 0;
-        $this->store();
-        $this->log("Releases session {$this->sessId}");
+        if ( !$this->toBeKilled() ) {
+            $this->acquired = 0;
+            if ( $normal ) $this->failures = 0;
+            $this->store();
+            $this->log("Releases session {$this->sessId}");
+        } else {
+            $this->log("Ownership of session {$this->sessId} has already been transfered to the control process, won't release");
+        }
         $this->pool->notifyReleased( $this );
     }
 
@@ -157,15 +171,14 @@ class SeleniumInstance {
     }
 
     public function launch() {
-        if ( $this->pid ) { 
-            if ( $this->sessId ) {
+            /*if ( $this->sessId ) {
                 try {
                     $driver = $this->_getDriver();
                     if ( $driver ) {
                         $driver->quit();
                     }
                 } catch ( Exception $e ) {}
-            }
+            }*/
 /*            echo "Killing ".$this->pid."\n";
             posix_kill( $this->pid, 9 );
 */
@@ -174,7 +187,6 @@ class SeleniumInstance {
             $this->pid = false;
             $this->sessId = false;
             sleep(1);
-        }
 
         $this->pid = $this->pool->launch( $this->port );
         sleep(2);
