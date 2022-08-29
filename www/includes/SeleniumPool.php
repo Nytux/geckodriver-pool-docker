@@ -280,7 +280,7 @@ class SeleniumPool {
                 $this->semRelease();
 
                 if ( !$instance ) {
-                    sleep(200000);
+                    usleep(200000);
                 }
             }
         }
